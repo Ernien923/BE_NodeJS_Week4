@@ -34,11 +34,15 @@ router.METHOD('PATH', async (req, res) => { ... });
 */
 router.post("/register", async (req, res) => {
   const { email, password } = req.body;
+
   try {
+    // 缺 email || 缺 password || email 已存在，回傳 400
     if (!email || !password || users.some((user) => user.email === email)) {
       return res.status(400).json({ status: "false", message: "..." });
     }
-    const salt = await bcrypt.genSalt(10);
+
+    // 使用 bcrypt.hash 將明文密碼加密，並寫入 users (實際上應該是寫入資料庫)
+    const salt = await bcrypt.genSalt(10); // 計算輪數，越多計算越久，但破解成本也會越高
     const hashPassword = await bcrypt.hash(password, salt);
     const userData = {
       id: nextId,
@@ -76,16 +80,22 @@ router.post("/login", async (req, res) => {
         .status(401)
         .json({ status: "false", message: "帳號或密碼錯誤" });
     }
+
+    // 用 email 找出要比對的 user 資料，並用 bcrypt.compare 比對
     const userIdx = users.findIndex((user) => user.email === email);
     const passwordCompare = await bcrypt.compare(
       password,
       users[userIdx].password,
     );
-    if (!password) {
+
+    // req 的密碼 vs 資料庫(此處寫死) 比對
+    if (!passwordCompare) {
       return res
         .status(401)
         .json({ status: "false", message: "帳號或密碼錯誤" });
     }
+
+    // token 簽出
     const payload = { id: users[userIdx].id, email: users[userIdx].email };
     const SECRET = process.env.JWT_SECRET;
     const token = jwt.sign(payload, SECRET, { expiresIn: "30d" });
@@ -104,5 +114,8 @@ router.post("/login", async (req, res) => {
 /* 作答區
 router.METHOD('PATH', middleware, (req, res) => { ... });
 */
+router.get("/me", verifyToken, (req, res) => {
+  return res.status(200).json({ status: "success", user: req.user });
+});
 
 module.exports = router;

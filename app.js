@@ -22,14 +22,21 @@ const app = express();
 //
 // ⚠️ **最後不需呼叫 app.listen()** — 這個部分交由 server.js 負責（分離「組裝」跟「啟動」，這樣 test.js 可以 supertest 直接戳 app、不佔 port）。
 
+// 全域 middleware 掛載
 app.use(cors());
 app.use(express.json());
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDoc));
+
+// 掛載 auth 路由
 app.use("/auth", authRouter);
+
+// 404 路由
 app.use((req, res) => {
-  return res.status(404).json({ error: "無此路由" });
+  return res.status(404).json({ status: "error", message: "路由不存在" });
 });
+
+// 錯誤處理 middleware
 app.use((err, req, res, next) => {
   return res.status(500).json({
     err: err.name,
