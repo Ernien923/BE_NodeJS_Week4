@@ -32,7 +32,7 @@ const router = express.Router();
 /* 作答區
 router.METHOD('PATH', async (req, res) => { ... });
 */
-router.post("/register", async (req, res) => {
+router.post("/register", async (req, res, next) => {
   const { email, password } = req.body;
 
   try {
@@ -52,7 +52,7 @@ router.post("/register", async (req, res) => {
     users.push(userData);
     return res.status(201).json({ status: "success", message: "註冊成功" });
   } catch (error) {
-    return res.status(500).json({ status: "false", message: "伺服器錯誤" });
+    next(error);
   }
 });
 
@@ -72,7 +72,7 @@ router.post("/register", async (req, res) => {
 /* 作答區
 router.METHOD('PATH', async (req, res) => { ... });
 */
-router.post("/login", async (req, res) => {
+router.post("/login", async (req, res, next) => {
   const { email, password } = req.body;
   try {
     if (!users.some((user) => user.email === email)) {
@@ -101,7 +101,7 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(payload, SECRET, { expiresIn: "30d" });
     return res.status(200).json({ status: "success", token });
   } catch (error) {
-    nextId(error);
+    next(error);
   }
 });
 // ───────────────────────────────────────────────────────────
